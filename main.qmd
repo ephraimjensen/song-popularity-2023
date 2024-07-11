@@ -125,20 +125,6 @@ display(f_musicdf)
 # does number of artists have an effect on spotify chart rankings?
 
 ```{python}
-
-count = 0
-for item in avg_stream_count["streams"]:
-    if item == -1:
-        print(f"problem found! index : {count}, value: {item}")
-        # print(avg_stream_count[count])
-    count += 1
-
-# avg_stream_count[]
-
-
-```
-
-```{python}
 def to_int(string_integer):
     # try:
         return int(string_integer)
@@ -161,8 +147,35 @@ print(f"solo: {avg_stream_count_solo}\ncollab: {avg_stream_count_collab}")
 ```
 
 ```{python}
+in_charts_solo = one_artist.loc[one_artist["in_spotify_charts"] != 0].sort_values(by="in_spotify_charts")
+in_charts_collab = multiple_artist.loc[multiple_artist["in_spotify_charts"] != 0].sort_values(by="in_spotify_charts")
 
-in_charts = f_musicdf.loc[f_musicdf["in_spotify_charts"] != 0]
-in_charts.sort_values(by="in_spotify_charts")
+# in_charts.sort_values(by="in_spotify_charts")
+display(in_charts_solo)
+display(in_charts_collab)
+
+
+top50solo = in_charts_solo.loc[in_charts_solo["in_spotify_charts"] <= 50]
+top50collab = in_charts_collab.loc[in_charts_collab["in_spotify_charts"] <= 50]
+
+display(top50solo)
+display(top50collab)
+
+top10solo = in_charts_solo.loc[in_charts_solo["in_spotify_charts"] <= 10]
+top10collab = in_charts_collab.loc[in_charts_collab["in_spotify_charts"] <= 10]
+
+display(top10solo)
+display(top10collab)
+
+top1solo = in_charts_solo.loc[in_charts_solo["in_spotify_charts"] <= 1]
+top1collab = in_charts_collab.loc[in_charts_collab["in_spotify_charts"] <= 1]
+
+display(top1solo)
+display(top1collab)
+```
+
+```{python}
+
+
 
 ```
