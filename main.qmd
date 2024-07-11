@@ -1,0 +1,162 @@
+---
+title: "Spotify Data Analysis"
+author: "Ephraim Jensen"
+date: "2024-07-10"
+format: html
+---
+
+# Spotify most popular songs of 2024 as of Mid-June
+
+
+
+```{python}
+import pandas as pd 
+import numpy as np
+import plotly_express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+
+from sklearn.model_selection import train_test_split
+from sklearn import tree
+# from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import RandomForestClassifier
+# from sklearn.ensemble import GradientBoostingClassifier
+# from sklearn.svm import SVC
+from sklearn import metrics
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score
+from datetime import datetime
+
+pd.options.mode.copy_on_write = True
+```
+
+```{python}
+musicdf = pd.read_csv("spotify2023.csv", encoding='ISO-8859-1')
+musicdf.head(300)
+
+```
+
+
+# Eliminate bad values
+
+
+```{python}
+len(musicdf)
+
+musicdf = musicdf.loc[musicdf["streams"] != 'BPM110KeyAModeMajorDanceability53Valence75Energy69Acousticness7Instrumentalness0Liveness17Speechiness3']
+```
+
+
+```{python}
+# musicdf = musicdf.drop(dropthese, axis=0)
+# unique_genres = musicdf["genre"].unique()
+
+# condition = musicdf.loc[musicdf["genre"] == "indie"]
+f_musicdf = musicdf.filter(["track_name", "artist(s)_name", "artist_count", "streams", "in_spotify_charts", "released_year", "released_month", "released_day"])
+
+display(f_musicdf)
+
+```
+
+# Deal with Na values
+
+
+```{python}
+# # select all rows with nan values
+# rows_with_na = f_musicdf[f_musicdf.isna().any(axis=1)]
+# # display(rows_with_na)
+
+# #select all rows with nan in track or artist\
+# tadf = f_musicdf.filter(["Track", "Artist"])
+
+# important_na = tadf[tadf.isna().any(axis=1)]
+# print(important_na)
+# # (display(musicdf.drop(important_na)))
+
+# na2 = f_musicdf.loc[f_musicdf.isna().any(axis=1)]
+# display(na2)
+
+```
+
+```{python}
+
+# # # # genre_popularitydf = musicdf.filter(["name" , "genre", "popularity"])
+# # # # genre_popularitydf.sort_values(by="popularity", ascending=False)
+# # # for column in f_musicdf.columns:
+# # #     rows_with_na_in_f_corr = f_musicdf[f_musicdf[column].isna()]
+# # #     print(rows_with_na_in_f_corr.count())
+
+# Loop through each column and count rows with NaN values
+for column in f_musicdf.columns:
+    rows_with_na = f_musicdf[f_musicdf[column].isna()]
+    count_na = rows_with_na.shape[0]  # Count the number of rows with NaN values
+    print(f"Column '{column}' has {count_na} rows with NaN values:")
+    # print(rows_with_na)
+    print()
+
+# print(f_musicdf.count())
+f_musicdf = f_musicdf.dropna()
+# print(f_musicdf.count())
+```
+
+# number of days since release
+```{python}
+# Function to calculate the difference in days
+def days_difference(year, month, day):
+    # Create the release date
+    release_date = datetime(year, month, day)
+    # Create the target date (January 1, 2024)
+    target_date = datetime(2024, 1, 1)
+    # Calculate the difference in days
+    difference = (target_date - release_date).days
+    return difference
+
+f_musicdf['days_released'] = f_musicdf.apply(lambda row: days_difference(row["released_year"], row["released_month"], row["released_day"]), axis=1)
+
+# f_musicdf = f_musicdf.drop(f_musicdf.filter(["released_year", "released_month", "released_day"]))
+f_musicdf = f_musicdf.drop(columns= ["released_year", "released_month", "released_day"])
+```
+
+```{python}
+
+
+display(f_musicdf)
+```
+
+# does number of artists have an effect on spotify chart rankings?
+
+```{python}
+
+count = 0
+for item in avg_stream_count["streams"]:
+    if item == -1:
+        print(f"problem found! index : {count}, value: {item}")
+        # print(avg_stream_count[count])
+    count += 1
+
+# avg_stream_count[]
+
+
+```
+
+```{python}
+def to_int(string_integer):
+    # try:
+        return int(string_integer)
+    # except:
+    #     return (-1)
+
+# one_artist
+one_artist = f_musicdf.loc[f_musicdf["artist_count"] == 1]
+display(one_artist)
+one_artist["streams"] = one_artist["streams"].apply(to_int)
+
+# avg_stream_count_solo
+
+# # more than 1 artist
+multiple_artist = f_musicdf.loc[f_musicdf["artist_count"] != 1]
+display(multiple_artist)
+multiple_artist["streams"] = multiple_artist["streams"].apply(to_int)
+
+# avg_stream_count_collab
+```
+
