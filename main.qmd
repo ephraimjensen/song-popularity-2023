@@ -149,14 +149,20 @@ def to_int(string_integer):
 one_artist = f_musicdf.loc[f_musicdf["artist_count"] == 1]
 display(one_artist)
 one_artist["streams"] = one_artist["streams"].apply(to_int)
-
-# avg_stream_count_solo
+avg_stream_count_solo = one_artist["streams"].mean()
 
 # # more than 1 artist
 multiple_artist = f_musicdf.loc[f_musicdf["artist_count"] != 1]
 display(multiple_artist)
 multiple_artist["streams"] = multiple_artist["streams"].apply(to_int)
+avg_stream_count_collab = multiple_artist["streams"].mean()
 
-# avg_stream_count_collab
+print(f"solo: {avg_stream_count_solo}\ncollab: {avg_stream_count_collab}")
 ```
 
+```{python}
+
+in_charts = f_musicdf.loc[f_musicdf["in_spotify_charts"] != 0]
+in_charts.sort_values(by="in_spotify_charts")
+
+```
