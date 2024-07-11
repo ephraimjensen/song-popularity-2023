@@ -30,37 +30,41 @@ pd.options.mode.copy_on_write = True
 ```
 
 ```{python}
-musicdf = pd.read_csv("spotify2023.csv", encoding='ISO-8859-1')
+musicdf = pd.read_csv("spotify2023.csv", encoding="ISO-8859-1")
 musicdf.head(300)
 
 ```
 
 
-# Eliminate bad values
-
-
 ```{python}
-len(musicdf)
+# Eliminate bad values
+# len(musicdf)
+musicdf = musicdf.loc[musicdf["streams"] != "BPM110KeyAModeMajorDanceability53Valence75Energy69Acousticness7Instrumentalness0Liveness17Speechiness3"]
+musicdf["streams"] = musicdf["streams"].apply(to_int)
 
-musicdf = musicdf.loc[musicdf["streams"] != 'BPM110KeyAModeMajorDanceability53Valence75Energy69Acousticness7Instrumentalness0Liveness17Speechiness3']
 ```
 
 
 ```{python}
+def to_int(string_integer):
+    return int(string_integer)
+
 # musicdf = musicdf.drop(dropthese, axis=0)
 # unique_genres = musicdf["genre"].unique()
 
 # condition = musicdf.loc[musicdf["genre"] == "indie"]
 f_musicdf = musicdf.filter(["track_name", "artist(s)_name", "artist_count", "streams", "in_spotify_charts", "released_year", "released_month", "released_day"])
 
+
+
 display(f_musicdf)
+
 
 ```
 
-# Deal with Na values
-
 
 ```{python}
+# Deal with Na values
 # # select all rows with nan values
 # rows_with_na = f_musicdf[f_musicdf.isna().any(axis=1)]
 # # display(rows_with_na)
@@ -78,7 +82,7 @@ display(f_musicdf)
 ```
 
 ```{python}
-
+# Deal with Na values
 # # # # genre_popularitydf = musicdf.filter(["name" , "genre", "popularity"])
 # # # # genre_popularitydf.sort_values(by="popularity", ascending=False)
 # # # for column in f_musicdf.columns:
@@ -98,8 +102,9 @@ f_musicdf = f_musicdf.dropna()
 # print(f_musicdf.count())
 ```
 
-# number of days since release
 ```{python}
+
+# number of days since release
 # Function to calculate the difference in days
 def days_difference(year, month, day):
     # Create the release date
@@ -110,7 +115,7 @@ def days_difference(year, month, day):
     difference = (target_date - release_date).days
     return difference
 
-f_musicdf['days_released'] = f_musicdf.apply(lambda row: days_difference(row["released_year"], row["released_month"], row["released_day"]), axis=1)
+f_musicdf["days_released"] = f_musicdf.apply(lambda row: days_difference(row["released_year"], row["released_month"], row["released_day"]), axis=1)
 
 # f_musicdf = f_musicdf.drop(f_musicdf.filter(["released_year", "released_month", "released_day"]))
 f_musicdf = f_musicdf.drop(columns= ["released_year", "released_month", "released_day"])
@@ -126,10 +131,8 @@ display(f_musicdf)
 
 ```{python}
 def to_int(string_integer):
-    # try:
-        return int(string_integer)
-    # except:
-    #     return (-1)
+    return int(string_integer)
+
 
 # one_artist
 one_artist = f_musicdf.loc[f_musicdf["artist_count"] == 1]
@@ -146,7 +149,7 @@ avg_stream_count_collab = multiple_artist["streams"].mean()
 print(f"solo: {avg_stream_count_solo}\ncollab: {avg_stream_count_collab}")
 ```
 
-```{python}
+```{python}586
 in_charts_solo = one_artist.loc[one_artist["in_spotify_charts"] != 0].sort_values(by="in_spotify_charts")
 in_charts_collab = multiple_artist.loc[multiple_artist["in_spotify_charts"] != 0].sort_values(by="in_spotify_charts")
 
@@ -175,6 +178,156 @@ display(top1collab)
 ```
 
 ```{python}
+
+data={
+
+    "index": ["Total Population<br>(n=952)",
+        # "On the Charts", 
+        "Reached Top 50 on Spotify Charts<br>(n=502)", 
+        # "Top 10", 
+        "Reached Top 1 on Spotify Charts<br>(n=16)", 
+        ],
+
+    "Solo": [ 
+        len(one_artist) / (len(one_artist) + len(multiple_artist)),
+        # len(in_charts_solo) / (len(in_charts_solo) + len(in_charts_collab)), 
+        len(top50solo) / (len(top50solo) + len(top50collab)), 
+        # len(top10solo) / (len(top10solo) + len(top10collab)), 
+        len(top1solo) / (len(top1solo) + len(top1collab)), 
+        ],
+        
+    "Collab": [ 
+        len(multiple_artist) / (len(one_artist) + len(multiple_artist)),
+        # len(in_charts_collab) / (len(in_charts_solo) + len(in_charts_collab)), 
+        len(top50collab) / (len(top50solo) + len(top50collab)), 
+        # len(top10collab) / (len(top10solo) + len(top10collab)), 
+        len(top1collab) / (len(top1solo) + len(top1collab)), 
+        ]
+
+}
+
+chartsdf = pd.DataFrame(data)
+chartsdf["Collab"] = chartsdf["Collab"].round(4)
+chartsdf["Solo"] = chartsdf["Solo"].round(4)
+# display(chartsdf)
+
+# chartsdf2 = pd.DataFrame(data2, index=[0])
+
+
+# Melt the DataFrame to long format for Plotly Express
+chartsdf_long = pd.melt(chartsdf, id_vars=["index"], var_name="chart_type", value_name="counts")
+
+# Create a bar plot with multiple bars
+fig = px.bar(chartsdf_long, x="index", y="counts", color="chart_type",
+             barmode="group", # "group" for grouped bars, "overlay" for overlaid bars
+             text="counts",
+             labels={
+                "index": "Sample Group", 
+                "counts": "Representation", 
+                "chart_type": "Type of Song",
+                },
+            title="Percentage of Solo vs. Collaboration Songs<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Across Population, Reached Top 50 on Spotify Charts, and Reached Top 1 on Spotify Charts"
+             )
+# fig.add_annotation
+
+# Show the plot
+fig.show()
+
+
+```
+
+
+
+__There is no significat difference between the performance of songs that have a single artist and a song made my multiple artists.__
+
+# does dancability have an effect on spotify chart rankings?
+
+```{python}
+
+
+musicdf = musicdf.sort_values(by="streams")
+
+
+# fig = px.scatter(musicdf,
+#     x="danceability_%",
+#     y="streams",
+#     color="energy_%"
+# )
+
+fig = px.scatter(musicdf,
+    x="danceability_%",
+    color="streams",
+    y="energy_%",
+    size="streams",
+    # color_continuous_scale=px.colors.sequential.Bluered,
+    # color_continuous_scale=['rgb(200,20,20)', 'rgb(0,0,255)'],
+    color_continuous_scale="ylorbr",
+
+    # color_continuous_scale="thermal_r",
+
+)
+
+# 'tealrose', 'tempo', 'temps', 'thermal', 'tropic', 'turbid',
+#              'turbo', 'twilight', 'viridis', 'ylgn', 'ylgnbu', 'ylorbr',
+#              'ylorrd'
+
+fig.update_traces(marker=dict(opacity=1, line=dict(width=0)))#size=35,symbol="square",
+
+fig.show()
+
+```
+
+```{python}
+def clean_and_convert(entry):
+    if pd.isna(entry):
+        return float('nan')
+    try:
+        # Remove commas and any other non-numeric characters
+        cleaned_entry = ''.join(c for c in str(entry) if c.isdigit() or c == '.')
+        return float(cleaned_entry)
+    except ValueError:
+        return float('nan')
+
+# top50 = pd.concat([top50solo, top50collab], ignore_index=True)
+# musicdf['in_deezer_charts'] = musicdf['in_deezer_charts'].str.replace(',', '').astype(float)
+# musicdf['in_deezer_charts'] = musicdf['in_deezer_charts'].apply(lambda x: float(str(x).replace(',', '')))
+
+# musicdf['in_deezer_charts'] = musicdf['in_deezer_charts'].apply(clean_and_convert)
+# musicdf['in_deezer_charts'] = musicdf['in_deezer_charts'].apply(lambda x: float(str(x).replace(',', '')))
+# replace(',', '').
+
+alltop50 = musicdf.loc[musicdf["in_spotify_charts"] != 0 ]
+alltop50 = alltop50.loc[musicdf["in_spotify_charts"] <= 50]
+alltop50 = alltop50.loc[musicdf["in_shazam_charts"] != 0]
+
+corrdf = alltop50.filter(['artist_count', 'released_year',
+       'released_month', 'released_day', 'in_spotify_playlists',
+       'in_spotify_charts', 'streams', 'in_apple_playlists', 'in_apple_charts','bpm', 'danceability_%', 'valence_%', 'energy_%',
+       'acousticness_%', 'instrumentalness_%', 'liveness_%', 'speechiness_%', "days_released"]) #.apply(clean_and_convert)#lambda x: float(str(x).replace(',', '')))#.astype(float)
+# corrdf = musicdf.filter(['artist_count', 'released_year',
+#        'released_month', 'released_day', 'in_spotify_playlists',
+#        'in_spotify_charts', 'streams', 'bpm', 'danceability_%', 'valence_%', 'energy_%',
+#        'acousticness_%', 'instrumentalness_%', 'liveness_%', 'speechiness_%']).astype(float)
+# corrdf = musicdf.drop(musicdf.filter(regex = 'key|artist\(s\)_name|track_name').columns, axis = 1)
+
+# columns_to_clean = ['streams', 'in_deezer_charts']
+# for column in columns_to_clean:
+#     corrdf[column] = corrdf[column].apply(clean_and_convert)
+
+corr_matrix = corrdf.corr()
+
+# Create a heatmap using Plotly Express
+fig = px.imshow(corr_matrix,
+                labels=dict(color='Correlation', text="Correlation"),
+                x=corr_matrix.index,
+                y=corr_matrix.columns,
+                color_continuous_scale='Reds')
+
+# Customize layout
+fig.update_layout(title='Correlation Matrix Heatmap')
+
+# Show plot
+fig.show()
 
 
 
