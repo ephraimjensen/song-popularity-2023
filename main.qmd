@@ -39,6 +39,8 @@ musicdf.head(300)
 ```{python}
 # Eliminate bad values
 # len(musicdf)
+def to_int(string_integer):
+    return int(string_integer)
 musicdf = musicdf.loc[musicdf["streams"] != "BPM110KeyAModeMajorDanceability53Valence75Energy69Acousticness7Instrumentalness0Liveness17Speechiness3"]
 musicdf["streams"] = musicdf["streams"].apply(to_int)
 
@@ -46,8 +48,7 @@ musicdf["streams"] = musicdf["streams"].apply(to_int)
 
 
 ```{python}
-def to_int(string_integer):
-    return int(string_integer)
+
 
 # musicdf = musicdf.drop(dropthese, axis=0)
 # unique_genres = musicdf["genre"].unique()
@@ -149,7 +150,8 @@ avg_stream_count_collab = multiple_artist["streams"].mean()
 print(f"solo: {avg_stream_count_solo}\ncollab: {avg_stream_count_collab}")
 ```
 
-```{python}586
+```{python}
+# 586
 in_charts_solo = one_artist.loc[one_artist["in_spotify_charts"] != 0].sort_values(by="in_spotify_charts")
 in_charts_collab = multiple_artist.loc[multiple_artist["in_spotify_charts"] != 0].sort_values(by="in_spotify_charts")
 
@@ -238,8 +240,8 @@ fig.show()
 
 
 
-__There is no significat difference between the performance of songs that have a single artist and a song made my multiple artists.__
-
+__There is no significant difference between the chart rankings of songs that have a single artist and a song made my multiple artists.__
+<!-- 
 # does dancability have an effect on spotify chart rankings?
 
 ```{python}
@@ -247,6 +249,7 @@ __There is no significat difference between the performance of songs that have a
 
 musicdf = musicdf.sort_values(by="streams")
 
+average_dancability = musicdf["danceability_%"].sum() / len(musicdf["danceability_%"])
 
 # fig = px.scatter(musicdf,
 #     x="danceability_%",
@@ -254,25 +257,40 @@ musicdf = musicdf.sort_values(by="streams")
 #     color="energy_%"
 # )
 
+# # Melt the DataFrame to long format for Plotly Express
+# chartsdf_long = pd.melt(musicdf.filter["danceability_%", "streams", "energy_%", ""], id_vars=["index"], var_name="chart_type", value_name="counts")
+
+# # Create a bar plot with multiple bars
+# fig = px.bar(chartsdf_long, x="index", y="counts", color="chart_type",
+#              barmode="group", # "group" for grouped bars, "overlay" for overlaid bars
+#              text="counts",
+#              labels={
+#                 "index": "Sample Group", 
+#                 "counts": "Representation", 
+#                 "chart_type": "Type of Song",
+#                 },
+
 fig = px.scatter(musicdf,
     x="danceability_%",
-    color="streams",
-    y="energy_%",
-    size="streams",
+    # color="streams",
+    y="streams",
+    # y="energy_%",
+    # size="streams",
     # color_continuous_scale=px.colors.sequential.Bluered,
-    # color_continuous_scale=['rgb(200,20,20)', 'rgb(0,0,255)'],
-    color_continuous_scale="ylorbr",
+    color_continuous_scale=['rgb(200,20,20)', 'rgb(0,0,255)'],
+    # color_continuous_scale="plasma_r",
 
     # color_continuous_scale="thermal_r",
 
 )
+fig.add_vline(x=average_dancability)
 
 # 'tealrose', 'tempo', 'temps', 'thermal', 'tropic', 'turbid',
 #              'turbo', 'twilight', 'viridis', 'ylgn', 'ylgnbu', 'ylorbr',
 #              'ylorrd'
 
-fig.update_traces(marker=dict(opacity=1, line=dict(width=0)))#size=35,symbol="square",
-
+fig.update_traces(marker=dict(opacity=.45, line=dict(width=0)))#size=35,symbol="square",
+fig.update_xaxes(range=[0, 100])
 fig.show()
 
 ```
@@ -329,6 +347,38 @@ fig.update_layout(title='Correlation Matrix Heatmap')
 # Show plot
 fig.show()
 
+``` -->
 
+# Can I predict if a song has more than 500 Million Streams
 
+```{python}
+from sklearn.metrics import accuracy_score
+import pandas as pd 
+# import numpy as np 
+# import plotly_express as px
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+
+n = 75  # For example, the 75th percentile
+nth_percentile = np.percentile(musicdf.streams, n)
+
+musicdf["top_25_percent"] = musicdf["streams"].apply(lambda x: 0 if x<500000000 else 1)
+
+target_name = "top_25_percent"
+chosen_features = ['in_spotify_playlists', 'in_spotify_charts', 'released_year', 'liveness_%', 'in_apple_charts']
+
+X_pred = musicdf[chosen_features]
+y_pred = musicdf.filter(regex = target_name)
+X_train, X_test, y_train, y_test = train_test_split(X_pred, y_pred, test_size=0.25, random_state=42)
+# Ensure y_train is 1-dimensional
+y_train = y_train.values.ravel()
+y_test = y_test.values.ravel()
+
+rf_clf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_clf.fit(X_train, y_train)
+y_pred = rf_clf.predict(X_test)
+
+accuracy = accuracy_score(y_test, y_pred)
+
+print(f"With these features, accuracy was: {accuracy}")
 ```
